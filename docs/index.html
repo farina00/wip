@@ -10,6 +10,7 @@
         overflow:hidden;              /** to prevent scrollbars when the browser is smaller than the divGVP **/
         background:white;
         height: 100vh;
+        touch-action: none;
     }
     </style>
     <title>Draggable</title>
@@ -19,6 +20,12 @@
 
 
 <script>
+
+// should prevent unwanted scroll on touch devices (AI ?)
+document.addEventListener('touchmove', function(event) {
+    event.preventDefault();
+}, { passive: false });
+
 
 // list of all draggable elements 
 const figs = []; 
