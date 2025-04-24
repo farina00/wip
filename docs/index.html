@@ -1,2 +1,357 @@
+
 <!docType HTML>
-Test
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <style>
+    body {
+        overscroll-behavior: contain; /** to disable pull to refresh effects **/ 
+        overflow:hidden;              /** to prevent scrollbars when the browser is smaller than the divGVP **/
+        background:white;
+    }
+    </style>
+    <title>Draggable</title>
+</head>
+<body style='overflow:hidden;user-select:none;'>
+<div id="divDebug" style="position:absolute;top:0;left:0;font-size:18px"></div>
+<div style='position:absolute;top:0;right:0;width:40px;bottom:0;background:black;opacity:0.5;z-index:1'></div>
+
+
+<script>
+
+// list of all draggable elements 
+const figs = []; 
+const tools = [];
+
+function createFigs(config) {
+    const {x,y,radius,background,width,height} = config; 
+    const dist = width**2+height**2;
+    const fig = document.createElement('div');
+    fig.style.position = 'absolute';
+    fig.x = x;
+    fig.y = y;
+    fig.width = width;
+    fig.height = height;
+    fig.rotate = 1; 
+    fig.style.fontSize = '24px'
+    fig.ax = 0;
+    fig.ay = 0;
+    fig.forceX = 0;
+    fig.forceY = 0; 
+    fig.style.transformOrigin = '50% 50%';
+    fig.style.transform = 'rotate(0deg)';
+    fig.style.background = background;
+    fig.style.borderRadius = '5%';
+    fig.style.border = '4px solid black';
+    fig.style.cursor = 'crosshair';
+    fig.style.opacity = 0.9;
+    fig.className = 'figurine';
+
+    const f0 = document.createElement('div');
+    f0.style.position = 'absolute';
+    f0.innerHTML = 'yp'
+    fig.appendChild(f0);
+
+
+    const f1 = document.createElement('div');
+    f1.style.position = 'absolute';
+    f1.style.width = f1.style.height = '1px';
+    f1.style.background = 'white';
+    fig.appendChild(f1); 
+
+    const f2 = document.createElement('div');
+    f2.style.position = 'absolute';
+    f2.style.right = '0px';
+    f2.style.width = f2.style.height = '1px';
+    f2.style.background = 'white';
+    fig.appendChild(f2); 
+
+    const f3 = document.createElement('div');
+    f3.style.position = 'absolute';
+    f3.style.right = f3.style.bottom = '0px';
+    f3.style.width = f3.style.height = '1px';
+    f3.style.background = 'white';
+    fig.appendChild(f3); 
+
+    
+    fig.isInside = (x,y) => {
+
+        function vector(p1, p2) {
+            return {
+                    x: (p2.x - p1.x),
+                    y: (p2.y - p1.y)
+            };
+        }
+
+        function dot(u, v) {
+            return u.x * v.x + u.y * v.y; 
+        }
+        const m = {x,y};
+        const rA = f1.getBoundingClientRect();
+        const rB = f2.getBoundingClientRect();
+        const rC = f3.getBoundingClientRect();
+        const AB = vector(rA, rB);
+        const AM = vector(rA, m);
+        const BC = vector(rB, rC);
+        const BM = vector(rB, m);
+        const dotABAM = dot(AB, AM);
+        const dotABAB = dot(AB, AB);
+        const dotBCBM = dot(BC, BM);
+        const dotBCBC = dot(BC, BC);
+        return 0 <= dotABAM && dotABAM <= dotABAB && 0 <= dotBCBM && dotBCBM <= dotBCBC;
+        
+    };
+
+    fig.repaint = () => {
+        fig.style.transform = 'rotate('+fig.rotate+'deg)';
+        fig.style.top =    fig.y +'px';
+        fig.style.left =   fig.x +'px';
+        fig.style.width =  fig.width+'px';
+        fig.style.height = fig.height+'px';
+        f0.innerHTML = fig.force;
+    }
+    fig.repaint();
+    document.body.appendChild(fig);
+    figs.push(fig); 
+    return fig;
+}
+
+function createTool(config) {
+    const {x,y, innerHTML, applyTool} = config;
+    const d = document.createElement('div');
+    d.x = x;
+    d.y = y;
+    d.style.position = 'absolute';
+    d.style.textAlign = 'center';
+    d.style.fontSize = '24px';
+    d.style.lineHeight = '41px'
+    d.innerHTML = innerHTML
+    d.style.top = y + 'px';
+    d.style.left = x + 'px';
+    d.style.width =  '41px';
+    d.style.height = '41px';
+    d.style.marginLeft = '-20px';
+    d.style.marginTop  = '-20px';
+    d.style.background = 'orange';
+    d.style.transform = 'rotate(1deg)';
+    d.style.borderRadius = '50%';
+    //d.style.border = '4px solid pink';
+    d.style.cursor = 'crosshair';
+    d.style.opacity = '90%';
+    d.className = 'tool';
+    d.applyTool = applyTool; 
+    document.body.appendChild(d);
+    tools.push(d); 
+    return d;
+}
+
+
+
+const reddish = 'linear-gradient(#e66465, red)';
+const blueish = 'linear-gradient(aqua, blue)';
+const greenish = 'linear-gradient(green, darkgreen)';
+
+
+createFigs({x:100,y:90, width:200,height:100, background: reddish}); 
+ 
+createFigs({x:300,y:90, width:50, height:100, background: blueish});
+// createFigs({x:500,y:90, width:100,height:100, background: greenish});
+
+// createFigs({x:100,y:200, width:200,height:100, background: reddish });
+// createFigs({x:300,y:200, width:50, height:100, background: blueish});
+// createFigs({x:500,y:200, width:100,height:100, background: greenish});
+
+// createFigs({x:100,y:400, width:100,height:150, background:'yellow'});
+// createFigs({x:300,y:400, width:100,height:150, background:'yellow'});
+
+// THIS IS THE TOOL !!!
+// https://www.w3schools.com/charsets/ref_utf_arrows.asp
+
+const rotatorClockwise = (fig) => { fig.rotate++; };
+const rotatorAnticlockwise = (fig) => { fig.rotate--; };
+const widener = (fig) => { fig.width++;  }
+const unwidener = (fig) => { fig.width--; }
+const heightener = (fig) => { fig.height++; }
+
+const moveDown = (fig) => {
+    fig.ay+=0.05;
+    if (fig.ay  > 0.5) fig.ay = 0.5;
+}
+
+const moveUp = (fig) => {
+    fig.ay-=0.05;
+    if (fig.ay  < -0.5) fig.ay = -0.5;
+}
+
+const moveRight = (fig) => {
+    fig.ax+=0.05;
+    if (fig.ax  > 0.5) fig.ax = 0.5;
+}
+
+const moveLeft = (fig) => {
+    fig.ax-=0.05;
+    if (fig.ax  < -0.5) fig.ax = -0.5;
+}
+
+const swapForces = (fig) => {
+    //if (swapForces.swapTime && new Date().getTime() - swapForces.swapTime < 1000) { return; }
+    //swapForces.swapTime = new Date().getTime(); 
+    fig.ax = -fig.ax;
+    fig.forceX = -fig.forceX;
+    fig.ay = -fig.ay; 
+    fig.forceY = -fig.forceY;
+}
+
+
+createTool({x:100,y:500,  innerHTML : '↓', applyTool : moveDown }); 
+createTool({x:150,y:500,  innerHTML : '→', applyTool : moveRight }); 
+createTool({x:200,y:500,  innerHTML : '←', applyTool : moveLeft }); 
+createTool({x:250,y:500,  innerHTML : '↑', applyTool : moveUp }); 
+
+
+createTool({x:100,y:550,  innerHTML : '↓', applyTool : moveDown }); 
+createTool({x:150,y:550,  innerHTML : '→', applyTool : moveRight }); 
+createTool({x:200,y:550,  innerHTML : '←', applyTool : moveLeft }); 
+createTool({x:250,y:550,  innerHTML : '↑', applyTool : moveUp }); 
+
+createTool({x:100,y:600,  innerHTML : '↓', applyTool : moveDown }); 
+createTool({x:150,y:600,  innerHTML : '→', applyTool : moveRight }); 
+createTool({x:200,y:600,  innerHTML : '←', applyTool : moveLeft }); 
+createTool({x:250,y:600,  innerHTML : '↑', applyTool : moveUp }); 
+
+createTool({x:100,y:650,  innerHTML : '↓', applyTool : moveDown }); 
+createTool({x:150,y:650,  innerHTML : '→', applyTool : moveRight }); 
+createTool({x:200,y:650,  innerHTML : '←', applyTool : moveLeft }); 
+createTool({x:250,y:650,  innerHTML : '↑', applyTool : moveUp }); 
+
+
+
+
+
+createTool({x:100,y:700,  innerHTML : '↻', applyTool : rotatorClockwise }); 
+createTool({x:150,y:700,  innerHTML : '↺', applyTool : rotatorAnticlockwise }); 
+createTool({x:200,y:700,  innerHTML : 'W', applyTool : widener }); 
+createTool({x:250,y:700,  innerHTML : 'U', applyTool : unwidener }); 
+
+createTool({x:100,y:750,  innerHTML : 'H', applyTool : heightener }); 
+
+createTool({x:150,y:750,  innerHTML : 'X', applyTool : swapForces }); 
+
+
+/*
+for (let i=0;i<20;i++) { 
+    d = createTool({x:200+i*30,y:600+ (i%5),  innerHTML : 'K', applyTool : (fig) => { if (fig.kill == undefined) fig.kill = 1 }} );
+    d.style.background ='blue'; // KILL 
+    d.style.border = '4px solid black';
+}
+*/
+
+let selected = null;
+
+
+
+document.onmousedown = function (e) {
+    if (e.srcElement.className == 'figurine' || e.srcElement.className == 'tool') {
+        selected = e.srcElement;
+        selected.dx = e.clientX  - parseInt(selected.style.left);
+        selected.dy = e.clientY  - parseInt(selected.style.top);
+    }
+}
+
+document.onmouseup = function (e) {
+    selected = null;
+}
+
+document.onmousemove = function (e) {
+    if (selected) {
+
+
+
+        let x = (e.clientX -selected.dx);
+        let y = (e.clientY -selected.dy);
+
+        if (x < 0) x = 0;
+        if (y < 0) y = 0; 
+        if (x + parseInt(selected.style.width)  > innerWidth - 40 ) {  x = innerWidth - 40 - parseInt(selected.style.width); }
+        if (y + parseInt(selected.style.height) > innerHeight - 40 ) { y = innerHeight - 40 - parseInt(selected.style.height); }
+
+        selected.x = x;
+        selected.y = y; 
+        selected.style.top =  y + 'px';
+        selected.style.left = x + 'px';
+
+    }
+}
+
+// redirection for touch device.
+document.ontouchstart = function(e) { e.clientX = e.touches[0].clientX; e.clientY = e.touches[0].clientY; document.onmousedown(e); }
+document.ontouchmove =  function(e) { e.clientX = e.touches[0].clientX; e.clientY = e.touches[0].clientY; document.onmousemove(e); }
+document.ontouchend =   document.onmouseup; 
+
+
+
+function loopy() {
+
+
+    
+    for (const fig of figs) { 
+        for (const tool of tools) {
+            if (fig.isInside(tool.x,tool.y)) {
+                tool.applyTool(fig);
+            }
+        }
+    }
+
+    
+
+    for (const fig of figs) { 
+
+        fig.forceX = fig.forceX + fig.ax;
+        fig.forceY = fig.forceY + fig.ay;
+        
+        const FRICTION_FACTOR = 0.95;
+        fig.ax *= FRICTION_FACTOR;
+        fig.ay *= FRICTION_FACTOR;
+        fig.forceX *= FRICTION_FACTOR;
+        fig.forceY *= FRICTION_FACTOR;
+     
+        fig.x += fig.forceX;
+        fig.y += fig.forceY;
+
+        // compute fig.force
+        if (selected != null) fig.force = 0;
+        else {
+            if (fig.force == undefined) fig.force = 0;
+            //if (fig.forceX + fig.forceY < 4) fig.force = 0;
+            fig.force = Math.floor(fig.forceX * fig.forceX + fig.forceY + fig.forceY);
+        }   
+
+        fig.repaint();
+
+        if (fig.kill) {
+            if (fig.kill < 200) {
+                fig.kill++;
+                fig.style.filter = 'blur('+fig.kill+'px)';
+            } else {
+                fig.style.display = 'none'; 
+            }
+        }
+
+    }
+
+    if (selected != null && selected.className === 'figurine') { // if you drag it remove any force it had.
+        selected.ax = 0;
+        selected.ay = 0;
+        selected.forceX *= 0.6; 
+        selected.forceY *= 0.6;
+    }
+    
+
+    requestAnimationFrame(loopy);
+}
+loopy();
+
+</script>
+</body>
+</html>
