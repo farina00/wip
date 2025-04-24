@@ -10,21 +10,31 @@
         overflow:hidden;              /** to prevent scrollbars when the browser is smaller than the divGVP **/
         background:white;
         height: 100vh;
-        touch-action: none;
     }
     </style>
-    <title>Draggable</title>
+    <title>1</title>
 </head>
 <body style='overflow:hidden;user-select:none;'>
 <div id="divDebug" style="position:absolute;top:0;left:0;font-size:18px"></div>
 
 
 <script>
+  function goFullscreen() {
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+    } else if (document.documentElement.mozRequestFullScreen) { // Firefox
+        document.documentElement.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
+        document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+        document.documentElement.msRequestFullscreen();
+    }
+}
 
-// should prevent unwanted scroll on touch devices (AI ?)
-document.addEventListener('touchmove', function(event) {
-    event.preventDefault();
-}, { passive: false });
+// Call fullscreen on a user tap
+document.addEventListener("click", goFullscreen);
+document.addEventListener("touchstart", goFullscreen);
+
 
 
 // list of all draggable elements 
