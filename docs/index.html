@@ -12,28 +12,34 @@
         height: 100vh;
     }
     </style>
-    <title>1</title>
+    <title>2</title>
 </head>
 <body style='overflow:hidden;user-select:none;'>
 <div id="divDebug" style="position:absolute;top:0;left:0;font-size:18px"></div>
 
 
 <script>
+  // isSmallDevice (phone or tablet or small laptop)
+  function isSmallDevice() {
+    return /Mobi|Android|iPhone|iPad|Windows Phone/.test(navigator.userAgent) || 
+           navigator.maxTouchPoints > 0 || 
+           window.innerWidth < 1024;
+  }
+
   function goFullscreen() {
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-    } else if (document.documentElement.mozRequestFullScreen) { // Firefox
-        document.documentElement.mozRequestFullScreen();
-    } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
-        document.documentElement.webkitRequestFullscreen();
-    } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
-        document.documentElement.msRequestFullscreen();
-    }
-}
+    const t = document.documentElement;
+    if      (t.requestFullscreen) {       t.requestFullscreen(); }
+    else if (t.mozRequestFullScreen) {    t.mozRequestFullScreen(); }
+    else if (t.webkitRequestFullscreen) { t.webkitRequestFullscreen(); }
+    else if (t.msRequestFullscreen) {     t.msRequestFullscreen();  }
+  }
+
 
 // Call fullscreen on a user tap
-document.addEventListener("click", goFullscreen);
-document.addEventListener("touchstart", goFullscreen);
+if (isSmallDevice()) {
+  document.addEventListener("click",      goFullscreen);
+  document.addEventListener("touchstart", goFullscreen);
+}
 
 
 
@@ -282,22 +288,16 @@ document.onmouseup = function (e) {
 
 document.onmousemove = function (e) {
     if (selected) {
-
-
-
         let x = (e.clientX -selected.dx);
         let y = (e.clientY -selected.dy);
-
         if (x < 0) x = 0;
         if (y < 0) y = 0; 
         if (x + parseInt(selected.style.width)  > innerWidth - 40 ) {  x = innerWidth - 40 - parseInt(selected.style.width); }
         if (y + parseInt(selected.style.height) > innerHeight - 40 ) { y = innerHeight - 40 - parseInt(selected.style.height); }
-
         selected.x = x;
         selected.y = y; 
         selected.style.top =  y + 'px';
         selected.style.left = x + 'px';
-
     }
 }
 
@@ -306,12 +306,9 @@ document.ontouchstart = function(e) { e.clientX = e.touches[0].clientX; e.client
 document.ontouchmove =  function(e) { e.clientX = e.touches[0].clientX; e.clientY = e.touches[0].clientY; document.onmousemove(e); }
 document.ontouchend =   document.onmouseup; 
 
-
+counter = 0; 
 
 function loopy() {
-
-
-    
     for (const fig of figs) { 
         for (const tool of tools) {
             if (fig.isInside(tool.x,tool.y)) {
@@ -319,9 +316,6 @@ function loopy() {
             }
         }
     }
-
-    
-
     for (const fig of figs) { 
 
         fig.forceX = fig.forceX + fig.ax;
@@ -344,6 +338,26 @@ function loopy() {
             fig.force = Math.floor(fig.forceX * fig.forceX + fig.forceY + fig.forceY);
         }   
 
+        counter++; 
+        const myId = 'div'+(counter % 50);
+        let div = document.getElementById(myId);
+        if (div == null) {
+          div = document.createElement('div');
+          div.id = myId; 
+        }
+        
+        div.style.position = 'absolute';
+        div.style.pointerEvents = 'none'
+        div.style.left = fig.x+(fig.width/2)  -54 +  'px'
+        div.style.top = fig.y+ (fig.height/2) -54 +  'px';
+        div.style.width = '100px';
+        div.style.height = '100px';
+        div.style.background = 'red';
+        div.style.borderRadius = '50%';
+        div.style.border = '8px solid black'
+        div.style.opacity = 0.3;
+        document.body.appendChild(div);
+
         fig.repaint();
 
         if (fig.kill) {
@@ -363,7 +377,6 @@ function loopy() {
         selected.forceX *= 0.6; 
         selected.forceY *= 0.6;
     }
-    
 
     requestAnimationFrame(loopy);
 }
