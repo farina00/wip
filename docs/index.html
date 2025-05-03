@@ -15,7 +15,7 @@
     <title>2</title>
 </head>
 <body style='overflow:hidden;user-select:none;'>
-<div id="divDebug" style="position:absolute;top:0;left:0;font-size:18px"></div>
+<div id="divDebug" style="position:absolute;top:30%;text-align:center;width:100%;opacity:0.5;font-family: monospace;font-size:120px;"></div>
 
 
 <script>
@@ -40,6 +40,44 @@ if (isSmallDevice()) {
   document.addEventListener("click",      goFullscreen);
   document.addEventListener("touchstart", goFullscreen);
 }
+
+// LOGIC FOR SEQUENCE 
+function createSequence(value) {
+    let index =0; 
+
+    function redraw() {
+        divDebug.innerHTML = '<span style="background:orange">' + value.substring(0,index) +'</span>'+ value.substring(index); 
+        if (index === value.length) {
+            divDebug.style.color = 'red';
+            setTimeout(() => {
+               divDebug.style.color = '';
+               reset(); 
+            }, 250);
+        } 
+    }
+
+    function check(letter) {
+        if (value.charAt(index) == letter) index++; 
+        redraw();
+    }
+    function reset() {
+        index = 0;
+        redraw(); 
+    }
+    function hasCompleted() {
+        return index == value.length; 
+    }
+
+    redraw();
+
+    return {
+        check,
+        reset,
+        hasCompleted
+    };
+}
+
+const sequence = createSequence('→↓←↑→↓←↑');
 
 
 
@@ -132,7 +170,7 @@ function createFigs(config) {
         fig.style.left =   fig.x +'px';
         fig.style.width =  fig.width+'px';
         fig.style.height = fig.height+'px';
-        f0.innerHTML = fig.force;
+        f0.innerHTML = Math.floor(fig.forceX+fig.forceY);
     }
     fig.repaint();
     document.body.appendChild(fig);
@@ -217,14 +255,13 @@ const moveLeft = (fig) => {
     if (fig.ax  < -0.5) fig.ax = -0.5;
 }
 
-const swapForces = (fig) => {
-    //if (swapForces.swapTime && new Date().getTime() - swapForces.swapTime < 1000) { return; }
-    //swapForces.swapTime = new Date().getTime(); 
-    fig.ax = -fig.ax;
-    fig.forceX = -fig.forceX;
-    fig.ay = -fig.ay; 
-    fig.forceY = -fig.forceY;
-}
+const swapForces = (fig,tool) => {
+    if (tool.innerHTML === '→') moveRight(fig);
+    if (tool.innerHTML === '←') moveLeft(fig);
+    if (tool.innerHTML === '↑') moveUp(fig);
+    if (tool.innerHTML === '↓') moveDown(fig);
+};
+
 
 
 createTool({x:100,y:500,  innerHTML : '↓', applyTool : moveDown }); 
@@ -259,16 +296,16 @@ createTool({x:250,y:700,  innerHTML : 'U', applyTool : unwidener });
 
 createTool({x:100,y:750,  innerHTML : 'H', applyTool : heightener }); 
 
-createTool({x:150,y:750,  innerHTML : 'X', applyTool : swapForces }); 
+d = createTool({x:150,y:750,  innerHTML : 'X', applyTool : swapForces }); 
 
-
-/*
-for (let i=0;i<20;i++) { 
-    d = createTool({x:200+i*30,y:600+ (i%5),  innerHTML : 'K', applyTool : (fig) => { if (fig.kill == undefined) fig.kill = 1 }} );
-    d.style.background ='blue'; // KILL 
-    d.style.border = '4px solid black';
+d.loop = () => {
+    //  '↑','→','↓','←'
+    d.innerHTML = (d.innerHTML == '↑') ? '→' : (d.innerHTML == '→') ? '↓' : (d.innerHTML == '↓') ? '←' : '↑';
+    setTimeout(d.loop, 3000); 
 }
-*/
+d.loop();
+
+
 
 let selected = null;
 
@@ -276,6 +313,7 @@ let selected = null;
 
 document.onmousedown = function (e) {
     if (e.srcElement.className == 'figurine' || e.srcElement.className == 'tool') {
+        sequence.reset();
         selected = e.srcElement;
         selected.dx = e.clientX  - parseInt(selected.style.left);
         selected.dy = e.clientY  - parseInt(selected.style.top);
@@ -306,14 +344,18 @@ document.ontouchstart = function(e) { e.clientX = e.touches[0].clientX; e.client
 document.ontouchmove =  function(e) { e.clientX = e.touches[0].clientX; e.clientY = e.touches[0].clientY; document.onmousemove(e); }
 document.ontouchend =   document.onmouseup; 
 
-counter = 0; 
+
+
 
 function loopy() {
+    for (const tool of tools) { tool.style.outline = '' }
     for (const fig of figs) { 
         for (const tool of tools) {
             if (fig.isInside(tool.x,tool.y)) {
-                tool.applyTool(fig);
-            }
+                tool.applyTool(fig, tool);
+                tool.style.outline = '1px solid yellow';
+                sequence.check(tool.textContent);
+            } 
         }
     }
     for (const fig of figs) { 
@@ -330,44 +372,7 @@ function loopy() {
         fig.x += fig.forceX;
         fig.y += fig.forceY;
 
-        // compute fig.force
-        if (selected != null) fig.force = 0;
-        else {
-            if (fig.force == undefined) fig.force = 0;
-            //if (fig.forceX + fig.forceY < 4) fig.force = 0;
-            fig.force = Math.floor(fig.forceX * fig.forceX + fig.forceY + fig.forceY);
-        }   
-
-        counter++; 
-        const myId = 'div'+(counter % 50);
-        let div = document.getElementById(myId);
-        if (div == null) {
-          div = document.createElement('div');
-          div.id = myId; 
-        }
-        
-        div.style.position = 'absolute';
-        div.style.pointerEvents = 'none'
-        div.style.left = fig.x+(fig.width/2)  -54 +  'px'
-        div.style.top = fig.y+ (fig.height/2) -54 +  'px';
-        div.style.width = '100px';
-        div.style.height = '100px';
-        div.style.background = 'red';
-        div.style.borderRadius = '50%';
-        div.style.border = '8px solid black'
-        div.style.opacity = 0.3;
-        document.body.appendChild(div);
-
         fig.repaint();
-
-        if (fig.kill) {
-            if (fig.kill < 200) {
-                fig.kill++;
-                fig.style.filter = 'blur('+fig.kill+'px)';
-            } else {
-                fig.style.display = 'none'; 
-            }
-        }
 
     }
 
